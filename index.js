@@ -1,76 +1,57 @@
 const readline = require("readline");
 
-function calculateMaxProfit(n, maxEarnings) {
+function calculateMaxProfit(timeUnits) {
   const buildings = [
-    { type: "T", time: 5, earn: 1500 },
-    { type: "P", time: 4, earn: 1000 },
-    { type: "C", time: 10, earn: 3000 },
+    { type: "T", duration: 5, profit: 1500 },
+    { type: "P", duration: 4, profit: 1000 },
+    { type: "C", duration: 10, profit: 3000 },
   ];
 
-  const dp = Array(n + 1)
-    .fill()
-    .map(() => ({
-      maxEarnings: 0,
-      T: 0,
-      P: 0,
-      C: 0,
-    }));
-
-  for (let t = n; t >= 0; t--) {
-    let bestT = 0,
-      bestP = 0,
-      bestC = 0;
+  // dp[t] stores: { maxEarnings, T, P, C }
+  const dp = new Array(timeUnits + 1);
+  for (let t = timeUnits; t >= 0; t--) {
+    dp[t] = { maxEarnings: 0, T: 0, P: 0, C: 0 };
 
     for (const b of buildings) {
-      const newTime = t + b.time;
-      if (newTime > n) continue;
+      const finishTime = t + b.duration;
+      if (finishTime > timeUnits) continue;
 
-      const currentEarn = b.earn * (n - newTime);
-      const totalEarn = currentEarn + dp[newTime].maxEarnings;
+      const currentProfit = b.profit * (timeUnits - finishTime);
+      const totalProfit = currentProfit + dp[finishTime].maxEarnings;
 
       if (
-        totalEarn > maxEarnings ||
-        (totalEarn === maxEarnings && bestT + bestP + bestC === 0)
+        totalProfit > dp[t].maxEarnings ||
+        (totalProfit === dp[t].maxEarnings &&
+          (b.type === "T" || b.type === "P"))
       ) {
-        maxEarnings = totalEarn;
-        switch (b.type) {
-          case "T":
-            bestT = dp[newTime].T + 1;
-            bestP = dp[newTime].P;
-            bestC = dp[newTime].C;
-            break;
-          case "P":
-            bestT = dp[newTime].T;
-            bestP = dp[newTime].P + 1;
-            bestC = dp[newTime].C;
-            break;
-          case "C":
-            bestT = dp[newTime].T;
-            bestP = dp[newTime].P;
-            bestC = dp[newTime].C + 1;
-            break;
-        }
+        // Prefer smaller duration if equal
+        dp[t].maxEarnings = totalProfit;
+        dp[t].T = dp[finishTime].T + (b.type === "T" ? 1 : 0);
+        dp[t].P = dp[finishTime].P + (b.type === "P" ? 1 : 0);
+        dp[t].C = dp[finishTime].C + (b.type === "C" ? 1 : 0);
       }
     }
-
-    dp[t] = { maxEarnings, T: bestT, P: bestP, C: bestC };
   }
 
-  return `T: ${dp[0].T} P: ${dp[0].P} C: ${dp[0].C}`;
+  return dp[0];
 }
 
+// Read input and execute
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
-rl.question("Enter time units: ", (input) => {
-  const n = parseInt(input);
-
-  rl.question("Enter earnings: ", (maxEarningsInput) => {
-    const maxEarnings = parseInt(maxEarningsInput);
-    console.log(calculateMaxProfit(n, maxEarnings));
-
+rl.question("Enter total time units: ", (input) => {
+  const n = parseInt(input.trim());
+  if (isNaN(n)) {
+    console.log("Invalid input!");
     rl.close();
-  });
+    return;
+  }
+
+  const result = calculateMaxProfit(n);
+  console.log(`Maximum Earnings: $${result.maxEarnings}`);
+  console.log(`T: ${result.T} P: ${result.P} C: ${result.C}`);
+  rl.close();
 });
