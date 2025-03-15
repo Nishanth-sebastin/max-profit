@@ -36,7 +36,6 @@ function calculateMaxProfit(timeUnits) {
   return dp[0];
 }
 
-// Read input and execute
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
