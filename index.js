@@ -7,10 +7,14 @@ function calculateMaxProfit(timeUnits) {
     { type: "C", duration: 10, profit: 3000 },
   ];
 
-  // dp[t] stores: { maxEarnings, T, P, C }
   const dp = new Array(timeUnits + 1);
+  for (let t = 0; t <= timeUnits; t++) {
+    dp[t] = { maxEarnings: 0, combinations: [] };
+  }
+
   for (let t = timeUnits; t >= 0; t--) {
-    dp[t] = { maxEarnings: 0, T: 0, P: 0, C: 0 };
+    let currentMax = 0;
+    let currentCombinations = [];
 
     for (const b of buildings) {
       const finishTime = t + b.duration;
@@ -19,17 +23,65 @@ function calculateMaxProfit(timeUnits) {
       const currentProfit = b.profit * (timeUnits - finishTime);
       const totalProfit = currentProfit + dp[finishTime].maxEarnings;
 
-      if (
-        totalProfit > dp[t].maxEarnings ||
-        (totalProfit === dp[t].maxEarnings &&
-          (b.type === "T" || b.type === "P"))
-      ) {
-        // Prefer smaller duration if equal
-        dp[t].maxEarnings = totalProfit;
-        dp[t].T = dp[finishTime].T + (b.type === "T" ? 1 : 0);
-        dp[t].P = dp[finishTime].P + (b.type === "P" ? 1 : 0);
-        dp[t].C = dp[finishTime].C + (b.type === "C" ? 1 : 0);
+      if (totalProfit > currentMax) {
+        currentMax = totalProfit;
+        currentCombinations = [];
+        // If no previous combinations, add new combination
+        if (dp[finishTime].combinations.length === 0) {
+          const newCombo = { T: 0, P: 0, C: 0 };
+          newCombo[b.type] = 1;
+          currentCombinations.push(newCombo);
+        } else {
+          // Add all combinations from finishTime, incrementing current building
+          dp[finishTime].combinations.forEach((combo) => {
+            const newCombo = { ...combo };
+            newCombo[b.type] += 1;
+            currentCombinations.push(newCombo);
+          });
+        }
+      } else if (totalProfit === currentMax) {
+        // Merge combinations from this building type
+        if (dp[finishTime].combinations.length === 0) {
+          const newCombo = { T: 0, P: 0, C: 0 };
+          newCombo[b.type] = 1;
+          // Check if this combo is already present
+          const exists = currentCombinations.some(
+            (c) =>
+              c.T === newCombo.T && c.P === newCombo.P && c.C === newCombo.C
+          );
+          if (!exists) {
+            currentCombinations.push(newCombo);
+          }
+        } else {
+          dp[finishTime].combinations.forEach((combo) => {
+            const newCombo = { ...combo };
+            newCombo[b.type] += 1;
+            const exists = currentCombinations.some(
+              (c) =>
+                c.T === newCombo.T && c.P === newCombo.P && c.C === newCombo.C
+            );
+            if (!exists) {
+              currentCombinations.push(newCombo);
+            }
+          });
+        }
       }
+    }
+
+    // Update dp[t] if currentMax is greater or equal
+    if (currentMax > dp[t].maxEarnings) {
+      dp[t].maxEarnings = currentMax;
+      dp[t].combinations = currentCombinations;
+    } else if (currentMax === dp[t].maxEarnings) {
+      // Merge new combinations, avoiding duplicates
+      currentCombinations.forEach((newCombo) => {
+        const exists = dp[t].combinations.some(
+          (c) => c.T === newCombo.T && c.P === newCombo.P && c.C === newCombo.C
+        );
+        if (!exists) {
+          dp[t].combinations.push(newCombo);
+        }
+      });
     }
   }
 
@@ -51,6 +103,9 @@ rl.question("Enter total time units: ", (input) => {
 
   const result = calculateMaxProfit(n);
   console.log(`Maximum Earnings: $${result.maxEarnings}`);
-  console.log(`T: ${result.T} P: ${result.P} C: ${result.C}`);
+  console.log("Solutions:");
+  result.combinations.forEach((combo, index) => {
+    console.log(`${index + 1}. T: ${combo.T} P: ${combo.P} C: ${combo.C}`);
+  });
   rl.close();
 });
