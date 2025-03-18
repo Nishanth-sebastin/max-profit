@@ -7,6 +7,7 @@ function calculateMaxProfit(timeUnits) {
     { type: "C", duration: 10, profit: 3000 },
   ];
 
+  // Initialize DP array where each entry contains max earnings and combinations
   const dp = new Array(timeUnits + 1);
   for (let t = 0; t <= timeUnits; t++) {
     dp[t] = { maxEarnings: 0, combinations: [] };
@@ -18,7 +19,8 @@ function calculateMaxProfit(timeUnits) {
 
     for (const b of buildings) {
       const finishTime = t + b.duration;
-      if (finishTime > timeUnits) continue;
+      // Adjusted condition to exclude buildings that finish at or after timeUnits
+      if (finishTime >= timeUnits) continue;
 
       const currentProfit = b.profit * (timeUnits - finishTime);
       const totalProfit = currentProfit + dp[finishTime].maxEarnings;
