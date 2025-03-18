@@ -19,7 +19,6 @@ function calculateMaxProfit(timeUnits) {
 
     for (const b of buildings) {
       const finishTime = t + b.duration;
-      // Adjusted condition to exclude buildings that finish at or after timeUnits
       if (finishTime >= timeUnits) continue;
 
       const currentProfit = b.profit * (timeUnits - finishTime);
